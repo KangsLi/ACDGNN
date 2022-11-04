@@ -1,0 +1,35 @@
+23种类型涉及的实体：
+1,gene-gene  (1,1)
+2,drug-drug  (0,0)
+3,disease-gene (2,1)
+4,disease-Symptom (2,3)
+5,disease-Anatomy (2,4)
+6,drug-disease (0,2)
+7,drug-gene (0,1)
+8,drug-gene (0,1)
+9,disease-disease (2,2)
+10,disease-gene (2,1)
+11,drug-disease (0,2)
+12,Anatomy-Gene (4,1)
+13,Anatomy-Gene (4,1)
+14,gene-gene (1,1)
+15,gene-Molecular Function (1,5)
+16,Pharmacologic Class-drug (6,0)
+17,gene-Cellular Component (1,7)
+18,gene-gene (1,1)
+19,drug-gene (0,1)
+20,Disease-gene (2,1)
+21,gene-Pathway (1,8)
+22,drug-Side Effect (0,9)
+23,Anatomy-gene (4,1)
+
+0:drug
+1:gene
+2,disease
+3,Symptom
+4,Anatomy
+5,Molecular Function
+6,Pharmacologic Class
+7,Cellular Component
+8,Pathway
+9,Side Effect
