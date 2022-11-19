@@ -38,8 +38,7 @@ def full_connection(seq, out_sz, activation=-1, in_drop=0.0, use_bias=True):
             ret = seq_fc
         return ret
 
-# path = "/DWM/My Drive/GBNNDDI/DSRADDI"
-# os.chdir(path)
+
 base_dir = os.getcwd()
 
 print(params)
@@ -253,31 +252,31 @@ neg_drug1 = tf.placeholder(tf.int32, shape=[None], name='neg_drug1') #drug one i
 neg_drug2 = tf.placeholder(tf.int32, shape=[None], name='neg_drug2') #drug two in positive samples
 binary_label = tf.placeholder(tf.float32, shape=[None], name='binary_label') #ground truth label
 
-#以下定义相关参数
+
 aggre_shared_att = tf.Variable(initializer([1, layers*hid[-1]]), name='aggre_shared_att') #learnable parameter vector in formula 7
 stru_embed_trans_matrix = tf.Variable(initializer([layers*hid[-1], layers*hid[-1]]), name='stru_embed_trans_matrix') #W_s in equation 6
 # feat_embed_trans_matrix = tf.Variable(initializer([n_components, layers*hid[-1]]), name='feat_embed_trans_matrix')
 feat_embed_trans_matrix = tf.Variable(initializer([n_components*layers, layers*hid[-1]]), name='feat_embed_trans_matrix') #W_f in equation 6
 ddi_sim_trans_matrix = tf.Variable(initializer([n_components, layers*hid[-1]]), name='ddi_sim_trans_matrix') #W_11 in formula 11
 
-rel_dim = 3*params.emb_dim if params.fsia else  2*params.emb_dim #关系的维度，如果考虑聚合特征，就是3倍维度（结构||特征||聚合）；不考虑聚合特征，就是两倍维度
+rel_dim = 3*params.emb_dim if params.fsia else  2*params.emb_dim 
 relation_vector = tf.Variable(initializer([ddi_types, rel_dim]), name='relation_vector')
-batch_relation_matrix = tf.matrix_diag(tf.nn.embedding_lookup(relation_vector, ddi_type)) #公式9中的M_r
-ddi_shared_matrix = tf.Variable(initializer([rel_dim, rel_dim]), name='ddi_shared_matrix') #公式9中的R
+batch_relation_matrix = tf.matrix_diag(tf.nn.embedding_lookup(relation_vector, ddi_type)) #M_r in Eq. 9
+ddi_shared_matrix = tf.Variable(initializer([rel_dim, rel_dim]), name='ddi_shared_matrix') #R in Eq. 9
 
-#公式9：获取三元组的预测结果
+#Eq. 9：obtain prediction results
 pos_output,pos_aggre_embed1,pos_aggre_embed2 = \
     get_output(pos_drug1,pos_drug2,drug_f_sim,h_1,stru_embed_trans_matrix,feat_embed_trans_matrix,aggre_shared_att,params,batch_relation_matrix,ddi_shared_matrix)
 neg_output,neg_aggre_embed1,neg_aggre_embed2 = \
     get_output(neg_drug1,neg_drug2,drug_f_sim,h_1,stru_embed_trans_matrix,feat_embed_trans_matrix,aggre_shared_att,params,batch_relation_matrix,ddi_shared_matrix)
 
 
-pred = tf.sigmoid(pos_output) #这里用于测试集的预测
+pred = tf.sigmoid(pos_output) 
 output = tf.concat([pos_output,neg_output],axis=0)
 
-base_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=binary_label, logits=output)) #预测损失
+base_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=binary_label, logits=output)) #prediction loss
 
-#以下是计算公式11的约束损失
+#constraint loss in Eq. 11
 aggre_embed = tf.concat([pos_aggre_embed1,pos_aggre_embed2,neg_aggre_embed1,neg_aggre_embed2],axis=0)
 drugs = tf.concat([pos_drug1,pos_drug2,neg_drug1,neg_drug2],axis=0)
 ddi_sim_embed = tf.nn.embedding_lookup(ddi_sim_in, drugs)
@@ -286,22 +285,22 @@ sim_mapping_loss = tf.square(ddi_sim_embed1_trans - aggre_embed)
 
 
 sim_mapping_loss = tf.reduce_mean(sim_mapping_loss)
-#约束损失权重
+
 sim_mapping_weight = tf.placeholder(dtype=tf.float32, shape=(),name='sim_mapping_weight')
-#总损失
+#final total loss
 total_loss = base_loss + sim_mapping_weight * sim_mapping_loss
-if params.fsia:#如果考虑了特征结构信息聚合，则将约束损失一起优化
+if params.fsia:
     opt = tf.train.AdamOptimizer(learning_rate=lr).minimize(total_loss)
-else:#否则只优化预测损失
+else:
     opt = tf.train.AdamOptimizer(learning_rate=lr).minimize(base_loss)
 
 
-#运行模块
+
 triplets['train'] = triplets['train'].astype(np.int32)
 triplets['valid'] = triplets['valid'].astype(np.int32)
-threshold = 0.5#预测正样本的阈值 
-feed_dict = {  'pos_drug1':pos_drug1,#药物1
-          'pos_drug2':pos_drug2,#药物2
+threshold = 0.5 
+feed_dict = {  'pos_drug1':pos_drug1,#drug one
+          'pos_drug2':pos_drug2,#drug two
           'ddi_type':ddi_type,
           'ffd_drop':ffd_drop,
           'attn_drop':attn_drop,
@@ -309,7 +308,7 @@ feed_dict = {  'pos_drug1':pos_drug1,#药物1
           'threshold':threshold
           }
 
-init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())#初始化参数
+init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
 sess = tf.Session()
 sess.run(init_op)
 # saver = tf.train.Saver()
@@ -322,7 +321,7 @@ neg_edges = neg_edges.astype(np.int32)
 
 for epoch in range(params.epoch):   
     permutation = np.random.permutation(pos_edges.shape[0])
-    #从pos_edges, neg_edges中取数据
+    
     pos_edges = pos_edges[permutation] 
     neg_edges = neg_edges[permutation] 
     batch = len(permutation)//data_batch_size + 1
@@ -346,12 +345,12 @@ for epoch in range(params.epoch):
         d1_feed_neg = neg_train_batch[:,0]
         d2_feed_neg = neg_train_batch[:,1]
         feed_dict_tra = {
-            pos_drug1:d1_feed_pos,#药物1
-            pos_drug2:d2_feed_pos,#药物2
-            neg_drug1:d1_feed_neg,#药物1
-            neg_drug2:d2_feed_neg,#药物2
+            pos_drug1:d1_feed_pos,
+            pos_drug2:d2_feed_pos,
+            neg_drug1:d1_feed_neg,
+            neg_drug2:d2_feed_neg,
             ddi_type:label_feed,
-            # ftr_in:ent_f,#输入特征
+            # ftr_in:ent_f,
             ffd_drop:params.ffd_drop,
             attn_drop:params.attn_drop,
             binary_label: np.concatenate((np.ones((len(d1_feed_pos)),dtype=np.float32),np.zeros((len(d1_feed_neg)),dtype=np.float32)),axis=0),
@@ -359,7 +358,7 @@ for epoch in range(params.epoch):
             # type_mask:ent_mask
         }
         # feed_dict_tra.update({i: d for i, d in zip(spa_adj, sparse_adj_input)})
-        #优化目标
+       
         _,batch_base_loss,batch_sim_mapping_loss = sess.run([opt,base_loss,sim_mapping_loss], feed_dict_tra)
         total_base_loss += batch_base_loss
         total_sim_mapping_loss += batch_sim_mapping_loss
@@ -371,13 +370,13 @@ for epoch in range(params.epoch):
     print('epoch:%d/%d(time:%.4f),total_loss:%.4f + %.4f'%(epoch,params.epoch,time2-time1,total_base_loss,total_sim_mapping_loss),file=f)
     print('epoch:%d/%d(time:%.4f),total_loss:%.4f + %.4f'%(epoch,params.epoch,time2-time1,total_base_loss,total_sim_mapping_loss))
     f.flush()
-    # -----------------模型训练----------------------
+    # -----------------training-------------------
     evaluate_data(triplets['train'],f,'训练',sess,feed_dict)
-    # -----------------模型验证----------------------
+    # -----------------validation-------------
     valid_data = np.loadtxt(params.file_paths['valid'])
     evaluate_data(valid_data,f,'验证',sess,feed_dict)
    
-    #-----------------模型测试----------------------
+    #-----------------testing----------------
     if epoch % 1 == 0:#每一个epoch就测试一次
       test_data = np.loadtxt(params.file_paths['test'])
       evaluate_data(test_data,f,'测试',sess,feed_dict)
