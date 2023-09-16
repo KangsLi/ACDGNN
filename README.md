@@ -1,5 +1,5 @@
 # ACDGNN
-Source code for "Attention-based Cross Domain Graph Neural Network for Prediction of Drug-Drug Interactions"
+Source code for "Attention-based Cross Domain Graph Neural Network for Prediction of Drug-Drug Interactions"[#]
    
  
 
